@@ -1,0 +1,159 @@
+Ansible playbook to spin-up baremetal UPI OpenShift installation environment.
+=============================================================================
+
+The purpose of this playbook is to reduce amount of time required to perform
+installation of Red Hat OpenShift on baremetal servers using **U**ser
+**P**rovisioned **I**nfrastructure (*UPI*) method. It follows the official
+OpenShift installation guide available at:
+https://docs.openshift.com/container-platform/4.8/installing/installing_bare_metal/installing-bare-metal.html
+
+:toc:
+:toc-placement: preamble
+:toclevels: 1
+:showtitle:
+
+= Environment
+
+The following diagram describes the environment configuration at its initial
+stage, before installation starts. For further details/requirements please read
+the next paragraph.
+
+image::../files/diagrams/diagram-start.png[Initial setup diagram]
+
+= Requirements
+. Valid Red Hat OpenShift subscriptions
+. Valid Red Hat Enterprise Linux subscriptions
+. Access to https://cloud.redhat.com
+. Pair of *activation key* and *organisation ID* to register servers with Red
+Hat (https://access.redhat.com/articles/1378093)
+. Provisioning host
+  .. Preinstalled RHEL 8
+  .. 8 CPUs
+  .. 16GB of memory
+  .. 100GB of free disk space
+  .. Connection to _baremetal_ network through *bridge* interface - as described
+  at the diagram above
+  .. Valid RHEL subscription with access to Red Hat packages
+. Provisioning VM
+  .. Valid RHEL subscription with access to Red hat packages
+. Three master nodes
+  .. PXE boot configured on NIC connected to _baremetal_ network
+. Two worker nodes (optional)
+  .. PXE boot configured on NIC connected to _baremetal_ network
+
+= Extra customization
+
+For additional customisation options please review and edit the following
+templates:
+
+. _roles/provisioning_vm/templates/install_config.yaml.j2_ - https://docs.openshift.com/container-platform/4.8/installing/installing_bare_metal/installing-bare-metal-network-customizations.html#installation-configuration-parameters_installing-bare-metal-network-customizations
+. _roles/provisioning_vm/templates/autoboot.ipxe.j2_ - https://ipxe.org/scripting
+
+= Installation procedure
+. Install RHEL8 on the _provisioning_ host
+. Collect a list of MAC addresses from the NICs configured for PXE boot on all cluster
+nodes (masters and workers)
+. Download RHEL8 qcow2 image from https://access.redhat.com/downloads and store
+it as _/var/lib/libvirt/images/rhel-8-x86_64-kvm.qcow2_, for an instance:
++
+```
+curl -L 'https://access.cdn.redhat.com/content/origin/files/(...)' -o \
+/var/lib/libvirt/images/rhel-8-x86_64-kvm.qcow2
+```
+
+. Configure network *bridge* connected to _baremetal_ network
+.. If you're using the same physical NIC for SSH connection to the
+_provisioning_ host, this will interrupt your connection. You may have to
+perform the following operation using out-of-band management interface/console
+.. You have to remove IP configuration from NIC before you add it to the bridge,
+then the IP address has to be configured on the top of bridge interface
+.. Update the NIC name (eth0) and IP address in the snippet bellow accordingly
+to your configuration
+
++
+```
+# nmcli connection add ifname baremetal type bridge con-name baremetal \
+ipv4.method manual ipv4.address 192.168.234.2/24 ipv6.method disabled \
+ipv4.dns 8.8.8.8 ipv4.gateway 192.168.234.254
+# nmcli con add type bridge-slave ifname eth0 master baremetal
+```
+
+. Copy this repository to the system which can access provisioning host and has
+ansible-playbook binary available. It can be provisioning host itself. +
+The following extra packages are also required on the Ansible's controller:
+.. python3-netaddr.noarch
+. Download your pull-secret.txt file from https://console.redhat.com/openshift/create/local
+and put it to _files/pull-secret.txt_
+. Create configuration file _config/vars.yaml_ - please see
+_config/vars.yaml.example_ for the blueprint - it should be pretty
+self-explaining
+.. `rhn` put your Red Hat's access details (activation key, organization ID)
+and the pool name. For more details please see:
+ ... https://access.redhat.com/solutions/253273
+ ... https://access.redhat.com/solutions/253273
+.. `cluster` configure cluster version, name, domain, ingress and API IP
+addresses, NTP servers IP addresses.
+.. `cluster.networkType` configure what SDN solution should be used,
+https://docs.openshift.com/container-platform/4.8/networking/openshift_sdn/about-openshift-sdn.html[OpenShiftSDN]
+or
+https://docs.openshift.com/container-platform/4.8/networking/ovn_kubernetes_network_provider/about-ovn-kubernetes.html[OVNKubernetes].
+.. `nodes.ipxe_image` name of the iPXE image, please see
+https://ipxe.org/appnote/buildtargets for details how to find the right iPXE
+image to boot from
+.. `nodes.masters` put a list of MAC addresses for PXE booting NIC on master
+nodes - order does matter
+.. `nodes.workers` put a list of MAC addresses for PXE booting NIC on worker
+nodes - order does matter. If you're not deploying any worker nodes, please set
+it to `workers: {}`
+.. `baremetal_network` the "main" network configuration, including IP, DNS, DHCP
+ranges configuration - adjust it to your environment
+.. `provisioning_vm` configuration of provisioning VM where the installation tool
+will be run from. It also host DHCP server for baremetal network (dnsmasq),
+haproxy for load balancer of API and ingress endpoints. Please ensure it has the
+right IP address configured and path to its qcow2 image. You may want to change
+the default root password.
+.. `bootstrap_vm` configuration of temporary bootstrap VM, ensure its qcow2
+image path is valid, the other defaults should be just fine.
+. Update inventory.yaml file to reflect your IP configuration for provisioning
+host and provisioning VM. It has to be consistent with the IP addresses
+configured earlier in _config/vars.yaml_ file
+. For additional customisation options please review and edit the following
+templates:
+.. _roles/provisioning_vm/templates/install_config.yaml.j2_
+.. _roles/provisioning_vm/templates/autoboot.ipxe.j2_
+. Run the installation playbook
++
+```
+$ ansible-playbook -i inventory.yaml main.yaml
+```
+. Once successfully finished, the environment should be looking as at the
+following diagram
++
+image::images/manual-end.png[End of deployment diagram]
+. Now you can power on the baremetal nodes, assuming they will boot via PXE and
+you're provided the right MAC addresses to the config file, nodes should be
+bootstrapped with the right roles assigned.
+. You can continue at https://docs.openshift.com/container-platform/4.8/installing/installing_bare_metal/installing-bare-metal.html#installation-installing-bare-metal_installing-bare-metal
+
+= Establishing connection to OpenShift UI (Virtualized environment)
+If you deploy OpenShift using this method in virtualized environment, with
+single powerfull host only and VMs as masters/workers nodes, you can create
+SOCKS5 proxy with your ssh client in order to reach OpenShift resources via
+web browser.
+```
+ssh root@your_host -D localhost:12345
+```
+Then configure your browser to use SOCKS5 proxy at localhost:12345
+
+= Cleaning up
+To clean up the environment please use cleanup.yaml playbook:
+```
+ansible-playbook -i inventory.yaml cleanup.yaml
+```
+
+= Credits
+. Rhys Oxenham, Ben Schmaus and August Simonelli for their work on development
+of openshift-aio (OpenShift All-in-One) https://github.com/RHFieldProductManagement/openshift-aio
+which partially has been used here
+. Mohammed Salih for sharing his autoboot.ipxe script I've used and
+modified here.
