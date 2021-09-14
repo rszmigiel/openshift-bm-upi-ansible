@@ -3,6 +3,7 @@
 :showtitle:
 :imagesdir: docs/images
 
+=======
 Ansible playbook to spin-up baremetal UPI OpenShift installation environment.
 =============================================================================
 
@@ -132,6 +133,7 @@ $ ansible-playbook -i inventory.yaml main.yaml
 following diagram
 +
 image::diagram-end.png[End of deployment diagram]
+
 . Now you can power on the baremetal nodes, assuming they will boot via PXE and
 you're provided the right MAC addresses to the config file, nodes should be
 bootstrapped with the right roles assigned.
