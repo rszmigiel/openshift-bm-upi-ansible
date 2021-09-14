@@ -1,0 +1,50 @@
+- name: Create provisioning VM image
+  ansible.builtin.shell:
+    cmd: >
+      qemu-img create
+      -f qcow2
+      -b "{{ provisioning_vm.rhel_image }}"
+      "{{ provisioning_vm.image }}"
+      "{{ provisioning_vm.disk }}G"
+    creates: "{{ provisioning_vm.image}}"
+  delegate_to: 127.0.0.1
+  register: provisioning_vm_create
+
+- name: Create temporary ifcfg-baremetal configuration file
+  ansible.builtin.template:
+    src: ifcfg-baremetal.j2
+    dest: /tmp/ifcfg-baremetal
+  delegate_to: 127.0.0.1
+
+- name: Configure provisioning VM 
+  ansible.builtin.shell:
+    cmd: >
+      virt-customize -a {{ provisioning_vm.image }}
+      --root-password password:{{ provisioning_vm.root_password }}
+      --copy-in /tmp/ifcfg-baremetal:/etc/sysconfig/network-scripts
+      --run-command 'mkdir /root/.ssh'
+      --run-command 'chmod 700 /root/.ssh'
+      --copy-in /root/.ssh/id_rsa.pub:/root
+      --run-command 'mv /root/id_rsa.pub /root/.ssh/authorized_keys'
+      --hostname "provisioning-vm.{{ cluster.domain }}"
+      --selinux-relabel
+  delegate_to: 127.0.0.1
+  when: provisioning_vm_create.changed == true
+
+- name: Define provisioning VM 
+  ansible.builtin.shell:
+    cmd: >
+      virt-install --name provisioning_vm 
+      --memory {{ provisioning_vm.memory }}
+      --vcpus {{ provisioning_vm.vcpus }} 
+      --cpu host-passthrough 
+      --disk path={{ provisioning_vm.image }},device=disk,bus=virtio,format=qcow2 
+      --network bridge=baremetal 
+      --os-variant rhel8-unknown 
+      --import 
+      --noautoconsole 
+      --virt-type kvm 
+      --boot hd 
+      --vnc
+    creates: /etc/libvirt/qemu/provisioning_vm.xml
+  delegate_to: 127.0.0.1

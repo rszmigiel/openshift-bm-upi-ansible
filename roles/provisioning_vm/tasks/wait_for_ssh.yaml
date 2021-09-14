@@ -1,0 +1,7 @@
+- name: Wait for provisioning VM to start
+  wait_for_connection:
+    timeout: 120
+  register: result
+  until: result is succeeded
+  retries: 3
+  delay: 30

@@ -1,0 +1,6 @@
+<network>
+  <name>baremetal</name>
+  <bridge name="baremetal"/>
+  <forward mode="route"/>
+  <ip address="10.10.120.1" netmask="255.255.255.0"/>
+</network>

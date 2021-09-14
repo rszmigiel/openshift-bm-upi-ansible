@@ -1,0 +1,5 @@
+- name: Ensure libvirtd is enabled and running
+  service:
+    name: libvirtd
+    enabled: yes
+    state: started

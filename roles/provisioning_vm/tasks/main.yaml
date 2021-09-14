@@ -1,0 +1,16 @@
+- include: split_version.yaml
+- include: configure_provisioning_vm.yaml
+- include: wait_for_ssh.yaml
+- include: generate_ssh_keypair.yaml
+- include: register_with_rhn.yaml
+- include: install_packages.yaml
+- include: configure_dnsmasq.yaml
+- include: configure_haproxy.yaml
+- include: configure_nginx.yaml
+- include: download_ocp_cli.yaml
+- include: download_ocp_install.yaml
+- include: download_rhcos.yaml
+- include: configure_ipxe.yaml
+- include: create_install_config.yaml
+- include: run_openshift-install.yaml
+

@@ -1,0 +1,27 @@
+- set_fact:
+    dhcp_start_prefix: "{{ baremetal_network.ipv4.dhcp.start }}/{{ baremetal_network.ipv4.network | ipaddr('prefix')}}"
+
+- name: Ensure provisioning VM has the recent copy of dnsmasq.conf
+  template:
+    src: dnsmasq-baremetal.conf.j2
+    dest: /etc/dnsmasq.d/baremetal.conf
+  notify:
+    - Reload dnsmasq
+
+- name: Ensure /tftpboot exist
+  file:
+    dest: /tftpboot
+    state: directory
+    setype: public_content_t
+ 
+- name: "Copy {{ nodes.ipxe_image }} to /tftpboot/"
+  copy:
+    remote_src: true
+    src: "/usr/share/ipxe/{{ nodes.ipxe_image }}" 
+    dest: /tftpboot/
+
+- name: Ensure dnsmasq is enabled and running
+  service:
+    name: dnsmasq
+    enabled: yes
+    state: started

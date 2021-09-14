@@ -1,0 +1,23 @@
+- name: Ensure the recent version of OCP INSTALL is downloaded
+  get_url:
+    url: "https://mirror.openshift.com/pub/openshift-v{{ version_split[0]}}/clients/ocp/{{cluster.version}}/openshift-install-linux.tar.gz"
+    dest: /tmp/
+  register: ocp_install_download
+
+- name: Extract OCP INSTALL archive
+  unarchive:
+    remote_src: True
+    src: "{{ ocp_install_download.dest }}"
+    dest: /tmp/
+  register: ocp_install_extract
+  when: ocp_install_download.changed
+
+- name: Copy OCP INSTALL binary to /usr/local/bin
+  copy:
+    remote_src: True
+    src: /tmp/openshift-install
+    dest: /usr/local/bin/
+    mode: 0555
+    owner: root
+    group: root
+  when: ocp_install_extract.changed

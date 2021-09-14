@@ -1,0 +1,10 @@
+all:
+  hosts:
+    provisioning_host:
+      ansible_host: 127.0.0.1
+      ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+    provisioning_vm:
+      ansible_host: 192.168.234.2
+      ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+
+    

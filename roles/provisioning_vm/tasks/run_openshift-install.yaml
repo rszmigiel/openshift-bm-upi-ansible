@@ -1,0 +1,34 @@
+- name: Check if install-config.yaml file does exist
+  stat:
+    path: /root/ocp-install/install-config.yaml
+  register: installconfig
+
+- name: Backup install-config.yaml file
+  copy:
+    src: /root/ocp-install/install-config.yaml
+    dest: /root/ocp-install/install-config.yaml.bak
+    remote_src: yes
+  when:
+    - installconfig.stat.exists == True
+
+- name: Create ignition files
+  ansible.builtin.shell:
+    cmd: >
+      openshift-install create ignition-configs --dir=/root/ocp-install
+  when:
+    - installconfig.stat.exists == True
+  register:
+    ocpinstall
+
+- name: Copy ignition files to /usr/share/nginx/html
+  copy:
+    src: "/root/ocp-install/{{ item }}"
+    dest: "/usr/share/nginx/html/{{ item }}"
+    remote_src: yes
+  with_items:
+    - bootstrap.ign
+    - master.ign
+    - worker.ign
+  when:
+    ocpinstall.rc == 0
+

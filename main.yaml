@@ -1,0 +1,49 @@
+- hosts: provisioning_host 
+  vars:
+    ansible_user: root
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+  - name: Read variables from the configuration file
+    include_vars:
+      file: "{{ playbook_dir }}/config/vars.yaml"
+    tags: always
+
+  tasks:
+  - include_role:
+      name: provisioning_host
+
+- hosts: provisioning_vm
+  vars:
+    ansible_user: root
+  become: true
+  gather_facts: false
+
+  pre_tasks:
+  - name: Read variables from the configuration file
+    include_vars:
+      file: "{{ playbook_dir }}/config/vars.yaml"
+    tags: always
+  - name: Read pull-secret.txt
+    set_fact:
+      pullSecret: "{{ lookup('file', 'files/pull-secret.txt') | string }}"
+  tasks:
+  - include_role:
+      name: provisioning_vm
+
+- hosts: provisioning_host
+  vars:
+    ansible_user: root
+  become: true
+  gather_facts: false
+
+  pre_tasks:
+  - name: Read variables from the configuration file
+    include_vars:
+      file: "{{ playbook_dir }}/config/vars.yaml"
+    tags: always
+
+  tasks:
+  - include_role:
+      name: bootstrap_vm

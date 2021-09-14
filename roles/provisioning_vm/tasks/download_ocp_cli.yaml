@@ -1,0 +1,23 @@
+- name: Ensure the recent version of OCP CLI is downloaded
+  get_url:
+    url: "https://mirror.openshift.com/pub/openshift-v{{version_split[0]}}/clients/ocp/{{ cluster.version }}/openshift-client-linux.tar.gz"
+    dest: /tmp/
+  register: ocp_cli_download
+
+- name: Extract OCP CLI archive
+  unarchive:
+    remote_src: True
+    src: "{{ ocp_cli_download.dest }}"
+    dest: /tmp/
+  register: ocp_cli_extract
+  when: ocp_cli_download.changed
+
+- name: Copy OCP CLI binary to /usr/local/bin
+  copy:
+    remote_src: True
+    src: /tmp/oc
+    dest: /usr/local/bin/
+    mode: 0555
+    owner: root
+    group: root
+  when: ocp_cli_extract.changed

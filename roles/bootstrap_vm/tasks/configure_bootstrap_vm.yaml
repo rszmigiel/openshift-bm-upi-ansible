@@ -1,0 +1,28 @@
+- name: Create bootstrap VM image
+  ansible.builtin.shell:
+    cmd: >
+      qemu-img create
+      -f qcow2
+      "{{ bootstrap_vm.image }}"
+      "{{ bootstrap_vm.disk }}G"
+    creates: "{{ bootstrap_vm.image}}"
+  delegate_to: 127.0.0.1
+
+- name: Define bootstrap VM 
+  ansible.builtin.shell:
+    cmd: >
+      virt-install --name bootstrap_vm 
+      --memory {{ bootstrap_vm.memory }}
+      --vcpus {{ bootstrap_vm.vcpus }} 
+      --cpu host-passthrough 
+      --disk path={{ bootstrap_vm.image }},device=disk,bus=virtio,format=qcow2 
+      --network bridge=baremetal,mac={{ bootstrap_vm.mac }}
+      --os-variant rhel8-unknown 
+      --import 
+      --noautoconsole 
+      --virt-type kvm 
+      --pxe
+      --boot hd,network
+    creates: /etc/libvirt/qemu/bootstrap_vm.xml
+  delegate_to: 127.0.0.1
+  register: bootstrap_vm

@@ -1,0 +1,6 @@
+- name: Ensure system is registered with RHN 
+  redhat_subscription:
+    state: present
+    activationkey: "{{ rhn.activationkey }}"
+    org_id: "{{ rhn.org_id }}"
+    pool: "{{ rhn.pool }}"

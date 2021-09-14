@@ -1,0 +1,42 @@
+- set_fact:
+    rhcos_base_url: "https://mirror.openshift.com/pub/openshift-v{{ version_split[0] }}/x86_64/dependencies/rhcos/{{ version_split[0]}}.{{ version_split[1] }}/{{ version_split[0]}}.{{ version_split[1] }}.{{ version_split[2] }}" 
+
+- name: Check if rhcos-live-initramfs.x86_64.img has been previously downloaded
+  stat: 
+    path: "/usr/share/nginx/html/rhcos-live-initramfs.x86_64.img"
+  register:
+    initramfs
+
+- name: Download rhcos-live-initramfs.x86_64.img
+  get_url:
+    url: "{{ rhcos_base_url }}/rhcos-live-initramfs.x86_64.img" 
+    dest: "/usr/share/nginx/html/"
+  when:
+    initramfs.stat.exists == False
+
+- name: Check if rhcos-live-kernel-x86_64 has been previously downloaded
+  stat: 
+    path: "/usr/share/nginx/html/rhcos-live-kernel-x86_64"
+  register:
+    kernel
+
+- name: Download rhcos-live-kernel-x86_64
+  get_url:
+    url: "{{ rhcos_base_url }}/rhcos-live-kernel-x86_64" 
+    dest: "/usr/share/nginx/html/"
+  when:
+    kernel.stat.exists == False
+
+- name: Check if rhcos-live-rootfs.x86_64.img has been previously downloaded
+  stat: 
+    path: "/usr/share/nginx/html/rhcos-live-rootfs.x86_64.img"
+  register:
+    rootfs
+
+- name: Download rhcos-live-rootfs.x86_64.img
+  get_url:
+    url: "{{ rhcos_base_url }}/rhcos-live-rootfs.x86_64.img" 
+    dest: "/usr/share/nginx/html/"
+  when:
+    rootfs.stat.exists == False
+

@@ -1,0 +1,23 @@
+interface=eth0
+domain={{ cluster.domain }}
+dhcp-authoritative
+dhcp-range={{ baremetal_network.ipv4.dhcp.start }},static,{{ baremetal_network.ipv4.network | ipaddr('netmask') }},{{ baremetal_network.ipv4.dhcp.end }}
+dhcp-option=option:router,{{ baremetal_network.ipv4.gateway }}
+dhcp-option=option:ntp-server,{{ cluster.ntp_servers | join(",") }}
+
+dhcp-host={{ bootstrap_vm.mac }},{{ baremetal_network.ipv4.dhcp.start }},bootstrap,infinite
+
+{% for master in nodes.masters %}
+dhcp-host={{ master }},{{ dhcp_start_prefix | next_nth_usable(loop.index) }},master-{{ loop.index }},infinite
+{% endfor %}
+
+{% for worker in nodes.workers %}
+dhcp-host={{ worker }},{{ dhcp_start_prefix | next_nth_usable(loop.index+3) }},worker-{{ loop.index }},infinite
+{% endfor %}
+
+enable-tftp
+tftp-root=/tftpboot
+dhcp-match=set:ipxe,175 # iPXE sends a 175 option.
+dhcp-boot=tag:!ipxe,{{ nodes.ipxe_image }}
+dhcp-boot=http://{{ provisioning_vm.ipv4.address }}:81/autoboot.ipxe
+

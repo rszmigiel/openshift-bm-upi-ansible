@@ -1,0 +1,19 @@
+- name: Ensure nginx can listen on 81/tcp port
+  seport:
+      ports: 81
+      proto: tcp
+      setype: http_port_t
+      state: present
+
+- name: Ensure nginx has modified configuration file with 81/tcp port
+  copy:
+    src: nginx.conf
+    dest: /etc/nginx/nginx.conf
+  notify:
+    - Reload nginx
+
+- name: Ensure nginx is enabled and running
+  service:
+    name: nginx
+    enabled: yes
+    state: started

@@ -1,0 +1,4 @@
+- name: Generate an OpenSSH keypair with the default values (4096 bits, rsa)
+  openssh_keypair:
+    path: /root/.ssh/id_rsa
+  register: provisioning_vm_ssh_keypair

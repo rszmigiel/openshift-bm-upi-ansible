@@ -1,0 +1,3 @@
+- include: configure_bootstrap_vm.yaml
+- include: start_bootstrap_vm.yaml
+

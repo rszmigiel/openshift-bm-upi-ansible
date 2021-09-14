@@ -1,0 +1,25 @@
+apiVersion: v1
+baseDomain: "{{ cluster.domain }}"
+compute: 
+- hyperthreading: Enabled 
+  name: worker
+  replicas: {{ nodes.workers | length }} 
+controlPlane: 
+  hyperthreading: Enabled 
+  name: master
+  replicas: {{ nodes.masters | length }}
+metadata:
+  name: "{{ cluster.name }}" 
+networking:
+  clusterNetwork:
+  - cidr: 10.128.0.0/14 
+    hostPrefix: 23 
+  networkType: "{{ cluster.networkType }}"
+  serviceNetwork: 
+  - 172.30.0.0/16
+platform:
+  none: {} 
+fips: false 
+pullSecret: '{{ pullSecret }}'
+sshKey: '{{ provisioning_vm_ssh_keypair.public_key }}'
+

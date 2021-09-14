@@ -1,0 +1,78 @@
+- hosts: provisioning_vm
+  vars:
+    ansible_user: root
+  become: true
+  gather_facts: false
+
+  tasks:
+  - name: Ensure system is unregistered from RHN
+    redhat_subscription:
+      state: absent
+    ignore_unreachable: yes
+    async: 60
+    poll: 5
+
+- hosts: provisioning_host 
+  vars:
+    ansible_user: root
+  become: true
+  gather_facts: false
+
+  pre_tasks:
+  - name: Read variables from the configuration file
+    include_vars:
+      file: "{{ playbook_dir }}/config/vars.yaml"
+    tags: always
+
+  tasks:
+  - name: Ensure Bootstrap VM is stopped
+    ansible.builtin.shell:
+      cmd: >
+        virsh destroy bootstrap_vm
+    register: result
+    failed_when: (result.rc >= 1) and (("domain is not running" not in result.stderr) and ("failed to get domain" not in result.stderr))
+    changed_when: result.rc == 0
+
+  - name: Ensure Bootstrap VM is undefined
+    ansible.builtin.shell:
+      cmd: >
+        virsh undefine bootstrap_vm
+    register: result
+    failed_when:
+    - result.rc >= 1
+    - '"failed to get domain" not in result.stderr'
+    changed_when: result.rc == 0
+
+  - name: Ensure Bootstrap VM disk image is removed
+    file:
+      path: "{{ bootstrap_vm.image }}"
+      state: absent
+
+  - name: Ensure Provisioning VM is stopped
+    ansible.builtin.shell:
+      cmd: >
+        virsh destroy provisioning_vm
+    register: result
+    failed_when: (result.rc >= 1) and (("domain is not running" not in result.stderr) and ("failed to get domain" not in result.stderr))
+    changed_when: result.rc == 0
+
+  - name: Ensure Provisioning VM is undefined
+    ansible.builtin.shell:
+      cmd: >
+        virsh undefine provisioning_vm
+    register: result
+    failed_when:
+    - result.rc >= 1
+    - '"failed to get domain" not in result.stderr'
+    changed_when: result.rc == 0
+
+  - name: Ensure Provisioning VM disk image is removed
+    file:
+      path: "{{ provisioning_vm.image }}"
+      state: absent
+
+  - name: Remove temporary ifcfg-baremetal configuration file
+    file:
+      path: /tmp/ifcfg-baremetal
+      state: absent
+    delegate_to: 127.0.0.1

@@ -1,0 +1,8 @@
+- set_fact:
+    dhcp_start_prefix: "{{ baremetal_network.ipv4.dhcp.start }}/{{ baremetal_network.ipv4.network | ipaddr('prefix')}}"
+
+- name: Ensure provisioning VM has the recent copy of autoboot.ipxe
+  template:
+    src: autoboot.ipxe.j2
+    dest: /usr/share/nginx/html/autoboot.ipxe
+

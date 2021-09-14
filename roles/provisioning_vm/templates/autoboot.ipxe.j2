@@ -1,0 +1,60 @@
+#!ipxe
+
+# This file itself is hosted at http://{{ provisioning_vm.ipv4.address}}:81/autoboot.ipxe
+
+# IP of web server serving the kernel, initrd and ignition files 
+set boot-ip {{ provisioning_vm.ipv4.address }}:81
+
+# Set kernel, rootfs, initrd files 
+set kernel-file rhcos-live-kernel-x86_64
+set rootfs-file rhcos-live-rootfs.x86_64.img
+set initrd-file rhcos-live-initramfs.x86_64.img
+#set nic-config bond=bond0:ens3f1,ens4f1:mode=active-backup ip=bond0:none vlan=bond0.945:bond0 ip=bond0.945:dhcp  bond=bond1:ens1f0,ens1f1:mode=active-backup ip=bond1:none ip=ens7f0:none ip=ens7f1:none
+
+# These IPs are already statically mapped in dhcp 
+# NOTE:: net7-945 is the interface with VLAN 945 on NIC p3p2 (ens3f1)
+
+{% for master in nodes.masters %}
+iseq ${net0/ip} {{ dhcp_start_prefix | next_nth_usable(loop.index) }} && set target master ||
+{% endfor %}
+
+{% for worker in nodes.workers %}
+iseq ${net0/ip} {{ dhcp_start_prefix | next_nth_usable(loop.index+3) }} && set target worker ||
+{% endfor %}
+
+iseq ${net0/ip} {{ baremetal_network.ipv4.dhcp.start }} && set target bootstrap ||
+
+isset ${target} && goto bootocp
+
+# In case if the server doesn't belong to any of the above list
+# it will prompt with a menu for manually choosing the right node type.
+set menu-timeout 50000
+set submenu-timeout ${menu-timeout}
+isset ${menu-default} || set menu-default exit
+
+# This menu and the following blocks :bootstrap :master and :worker
+# can be simplified, with a single block. The only difference between
+# the block is the ignition file which can be reffered using ${target}
+:start
+menu Welcome to iPXE's Boot Menu
+item --gap -- ---------------- iPXE Menu ----------------
+item bootstrap Install Bootstrap node
+item master Install Master node
+item worker Install Worker node
+item reboot Reboot
+choose target || goto exit
+
+goto bootocp
+
+:bootocp
+
+kernel http://${boot-ip}/${kernel-file} initrd=main coreos.live.rootfs_url=http://${boot-ip}/${rootfs-file} coreos.inst.install_dev=/dev/vda coreos.inst.ignition_url=http://${boot-ip}/${target}.ign rd.neednet=1 
+initrd --name main http://${boot-ip}/${initrd-file}
+boot
+
+:exit
+shell 
+
+:reboot
+reboot
+

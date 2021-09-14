@@ -1,0 +1,11 @@
+- name: Ensure /root/ocp-install directory exists
+  file:
+    path: /root/ocp-install
+    state: directory
+    mode: '0700'
+
+- name: Ensure provisioning VM has the recent copy of install-config.yaml
+  template:
+    src: install-config.yaml.j2
+    dest: /root/ocp-install/install-config.yaml
+

@@ -1,0 +1,21 @@
+- name: Wait until bootstrap VM will shutdown after bootstrap
+  ansible.builtin.shell:
+    cmd: >
+      virsh domstate bootstrap_vm
+  register: result
+  until: result.stdout.find("shut off") != -1
+  retries: 18
+  delay: 10
+  ignore_errors: yes
+  when: bootstrap_vm.changed
+
+- name: Ensure bootstrap VM is running
+  ansible.builtin.shell:
+    cmd: >
+      virsh start bootstrap_vm 
+  delegate_to: 127.0.0.1
+  register: result
+  failed_when: (result.rc >= 1) and ("Domain is already active" not in result.stderr)
+  changed_when: result.rc == 0
+  when: bootstrap_vm.changed
+

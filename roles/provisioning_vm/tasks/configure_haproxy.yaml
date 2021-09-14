@@ -1,0 +1,21 @@
+- set_fact:
+    dhcp_start_prefix: "{{ baremetal_network.ipv4.dhcp.start }}/{{ baremetal_network.ipv4.network | ipaddr('prefix')}}"
+
+- name: Ensure haproxy can open any port
+  seboolean:
+    name: haproxy_connect_any
+    state: yes
+    persistent: yes
+
+- name: Ensure provisioning VM has the recent copy of haproxy.cfg
+  template:
+    src: haproxy.cfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+  notify:
+    - Reload haproxy
+
+- name: Ensure haproxy is enabled and running
+  service:
+    name: haproxy
+    enabled: yes
+    state: started
