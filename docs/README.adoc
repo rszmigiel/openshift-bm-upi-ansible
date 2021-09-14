@@ -3,7 +3,6 @@
 :showtitle:
 :imagesdir: docs/images
 
-=======
 Ansible playbook to spin-up baremetal UPI OpenShift installation environment.
 =============================================================================
 
