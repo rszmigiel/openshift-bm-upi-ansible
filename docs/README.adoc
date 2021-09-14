@@ -1,3 +1,8 @@
+:toc-placement: preamble
+:toclevels: 1
+:showtitle:
+:imagesdir: docs/images
+
 Ansible playbook to spin-up baremetal UPI OpenShift installation environment.
 =============================================================================
 
@@ -8,9 +13,6 @@ OpenShift installation guide available at:
 https://docs.openshift.com/container-platform/4.8/installing/installing_bare_metal/installing-bare-metal.html
 
 :toc:
-:toc-placement: preamble
-:toclevels: 1
-:showtitle:
 
 = Environment
 
@@ -18,7 +20,7 @@ The following diagram describes the environment configuration at its initial
 stage, before installation starts. For further details/requirements please read
 the next paragraph.
 
-image::../files/diagrams/diagram-start.png[Initial setup diagram]
+image::diagram-start.png[Initial setup diagram]
 
 = Requirements
 . Valid Red Hat OpenShift subscriptions
@@ -129,7 +131,7 @@ $ ansible-playbook -i inventory.yaml main.yaml
 . Once successfully finished, the environment should be looking as at the
 following diagram
 +
-image::images/manual-end.png[End of deployment diagram]
+image::diagram-end.png[End of deployment diagram]
 . Now you can power on the baremetal nodes, assuming they will boot via PXE and
 you're provided the right MAC addresses to the config file, nodes should be
 bootstrapped with the right roles assigned.
