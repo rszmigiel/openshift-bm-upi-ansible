@@ -1,0 +1,33 @@
+- name: Checking if three MAC addresses for master nodes have been provided
+  assert:
+    that: "{{ nodes.masters | length == 3 }}"
+    fail_msg: "You MUST specify three MAC addresses for master nodes, as OCP requires exactly three master nodes."
+    success_msg: "Three MAC addresses have been provided for master nodes."
+
+- name: Checking if provided MAC addresses are correct
+  assert:
+    that: "{{ item | hwaddr != False }}"
+    fail_msg: "This MAC address looks fine."
+    success_msg: "This MAC address doesn't look good."
+  with_items:
+  - "{{ nodes.masters }}"
+
+- name: Check if API FQDN is resolveable
+  assert:
+    that: "{{ lookup('dig', 'api.'+cluster.name+'.'+cluster.domain ) | ipaddr == cluster.ipv4.api }}"
+    fail_msg: "I could not resolve api.{{ cluster.name }}.{{ cluster.domain }} to {{ cluster.ipv4.api }}."
+    success_msg: "I could resolve api.{{ cluster.name }}.{{ cluster.domain }} to {{ cluster.ipv4.api }}."
+
+- set_fact:
+    wildcard_test: "{{ lookup('password', '/dev/null chars=ascii_letters') }}"
+
+- name: Check if INGRESS wildcard is resolveable
+  assert:
+    that: "{{ lookup('dig', wildcard_test+'.apps.'+cluster.name+'.'+cluster.domain ) | ipaddr == cluster.ipv4.ingress }}"
+    fail_msg: "I could not resolve {{ wildcard_test }}.apps.{{ cluster.name }}.{{ cluster.domain }} to {{ cluster.ipv4.ingress }}."
+    success_msg: "I could resolve {{ wildcard_test}}.apps.{{ cluster.name }}.{{ cluster.domain }} to {{ cluster.ipv4.ingress }}."
+
+- name: Check if pull-secret.txt is in files/
+  assert:
+    that: "'files/pull-secret.txt' is file"
+    fail_msg: "I could not retrieve pull-secret.txt file from files directory."

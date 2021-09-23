@@ -10,6 +10,9 @@
       file: "{{ playbook_dir }}/config/vars.yaml"
     tags: always
 
+  - name: Run validation tasks
+    include_tasks: validations.yaml
+
   tasks:
   - include_role:
       name: provisioning_host
