@@ -84,6 +84,7 @@ ipv4.dns 8.8.8.8 ipv4.gateway 192.168.234.254
 ansible-playbook binary available. It can be provisioning host itself. +
 The following extra packages are also required on the Ansible's controller:
 .. python3-netaddr.noarch
+.. python3-dns
 . Download your pull-secret.txt file from https://console.redhat.com/openshift/create/local
 and put it to _files/pull-secret.txt_
 . Create configuration file _config/vars.yaml_ - please see
